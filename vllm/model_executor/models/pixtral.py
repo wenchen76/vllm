@@ -673,8 +673,10 @@ class Attention(nn.Module):
         q, k = apply_rotary_emb_vit(q, k, freqs_cis=freqs_cis)
 
         if USE_XFORMERS_OPS:
+            print('###USE_XFORMERS_OPS in Attention')
             out = xops.memory_efficient_attention(q, k, v, attn_bias=mask)
         else:
+            print('###scaled_dot_product_attention in Attention')
             out = nn.functional.scaled_dot_product_attention(q,
                                                              k,
                                                              v,
@@ -819,9 +821,11 @@ class VisionTransformer(nn.Module):
 
         # pass through Transformer with a block diagonal mask delimiting images
         if USE_XFORMERS_OPS:
+            print('###USE_XFORMERS_OPS in VisionTransformer')
             mask = xops.fmha.attn_bias.BlockDiagonalMask.from_seqlens(
                 [p.shape[-2] * p.shape[-1] for p in patch_embeds_list], )
         else:
+            print('###generate_block_attention_mask in VisionTransformer')
             from transformers.models.pixtral.modeling_pixtral import (
                 generate_block_attention_mask)
             mask = generate_block_attention_mask(
