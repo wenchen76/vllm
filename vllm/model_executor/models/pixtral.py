@@ -677,10 +677,14 @@ class Attention(nn.Module):
             out = xops.memory_efficient_attention(q, k, v, attn_bias=mask)
         else:
             print('###scaled_dot_product_attention in Attention')
+            q = q.transpose(1, 2)
+            k = k.transpose(1, 2)
+            v = v.transpose(1, 2)
             out = nn.functional.scaled_dot_product_attention(q,
                                                              k,
                                                              v,
                                                              attn_mask=mask)
+            out = out.transpose(1, 2)
 
         out = out.reshape(batch, patches, self.n_heads * self.head_dim)
         return self.wo(out)
