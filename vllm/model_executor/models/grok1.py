@@ -346,6 +346,7 @@ class Grok1DecoderLayer(nn.Module):
                     intermediate_size=config.intermediate_size,
                     quant_config=quant_config,
                     reduce_results=False,
+                    prefix=f"{prefix}.mlp"
                 )
         else:
             raise NotImplementedError("Number of experts must be > 0.")
@@ -509,12 +510,15 @@ class Grok1Model(nn.Module):
             ("qkv_proj", "q_proj", "q"),
             ("qkv_proj", "k_proj", "k"),
             ("qkv_proj", "v_proj", "v"),
+            ("gate_up_proj", "gate_proj", 0),
+            ("gate_up_proj", "up_proj", 1),
         ]
 
         params_dict = dict(self.named_parameters())
         loaded_params: set[str] = set()
         expert_params_mapping = self.get_expert_mapping()
         for name, loaded_weight in weights:
+            print('###checkpoint weight name:', name)
             if (self.quant_config is not None and
                 (scale_name := self.quant_config.get_cache_scale(name))):
                 # Loading kv cache quantization scales
