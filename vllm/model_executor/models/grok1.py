@@ -300,6 +300,7 @@ class Grok1DecoderLayer(nn.Module):
         super().__init__()
         self.hidden_size = config.hidden_size
         self.num_experts = config.num_local_experts
+        print('###self.num_experts:', self.num_experts)
         # Check for fp8 quantization
         self.use_fp8 = False
         if quant_config is not None:
@@ -495,6 +496,7 @@ class Grok1Model(nn.Module):
     def get_expert_mapping(self) -> list[tuple[str, str, int, str]]:
         # Map Grok1's unique expert parameter names to standard names
         num_experts = self.config.num_local_experts
+        print('###num_experts:', num_experts)
         return FusedMoE.make_expert_params_mapping(
             ckpt_gate_proj_name="w1",  # Grok1 specific
             ckpt_down_proj_name="w2",  # Grok1 specific
@@ -552,6 +554,7 @@ class Grok1Model(nn.Module):
             else:
                 for mapping in expert_params_mapping:
                     param_name, weight_name, expert_id, shard_id = mapping
+                    print('###param_name, weight_name, expert_id, shard_id:', param_name, weight_name, expert_id, shard_id)
                     if weight_name not in name:
                         continue
                     name = name.replace(weight_name, param_name)
