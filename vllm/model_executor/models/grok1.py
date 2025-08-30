@@ -332,22 +332,20 @@ class Grok1DecoderLayer(nn.Module):
         #num_experts_per_tok = config.num_experts_per_tok if hasattr(config, "num_experts_per_tok") else 1
 
         if self.num_experts > 0:
-            self.moe_block = Grok1MoE(
+            self.block_sparse_moe = Grok1MoE(
                 num_experts=self.num_experts,
                 top_k=config.num_experts_per_tok,
                 hidden_size=config.hidden_size,
                 intermediate_size=config.intermediate_size,
                 quant_config=quant_config,
                 reduce_results=not self.residual_moe,
-                prefix=f"{prefix}.moe_block")
+                prefix=f"{prefix}.block_sparse_moe")
             if self.residual_moe:
-                self.mlp = Grok1MLP(
-                    hidden_size=config.hidden_size,
-                    intermediate_size=config.intermediate_size,
-                    quant_config=quant_config,
-                    reduce_results=False,
-                    prefix=f"{prefix}.mlp"
-                )
+                self.mlp = Grok1MLP(hidden_size=config.hidden_size,
+                                    intermediate_size=config.intermediate_size,
+                                    quant_config=quant_config,
+                                    reduce_results=False,
+                                    prefix=f"{prefix}.mlp")
         else:
             raise NotImplementedError("Number of experts must be > 0.")
 
@@ -362,7 +360,7 @@ class Grok1DecoderLayer(nn.Module):
 
         if self.num_experts > 0:
             if self.residual_moe:
-                # NOTE: self.moe_block modifies the input in-place,
+                # NOTE: self.block_sparse_moe modifies the input in-place,
                 # so we have to call it later. Be aware of any possible related errors.
                 if get_tensor_model_parallel_world_size() > 1:
                     self.ffn = lambda x: tensor_model_parallel_all_reduce(
@@ -370,7 +368,7 @@ class Grok1DecoderLayer(nn.Module):
                 else:
                     self.ffn = self.moe_with_rmoe
             else:
-                self.ffn = self.moe_block
+                self.ffn = self.block_sparse_moe
         else:
             raise NotImplementedError("Number of experts must be > 0.")
 
@@ -409,7 +407,7 @@ class Grok1DecoderLayer(nn.Module):
         mlp_result = self.mlp(x)
         with torch.cuda.stream(self.alt_stream):
             # moe should not be inplace because of stream race condition
-            moe_result = self.moe_block(x)
+            moe_result = self.block_sparse_moe(x)
         current_stream.wait_stream(self.alt_stream)
         return (mlp_result + moe_result) / 1.4142135623730951
 
