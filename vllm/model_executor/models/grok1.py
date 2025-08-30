@@ -496,9 +496,9 @@ class Grok1Model(nn.Module):
         # Map Grok1's unique expert parameter names to standard names
         num_experts = self.config.num_local_experts
         return FusedMoE.make_expert_params_mapping(
-            ckpt_gate_proj_name="linear",  # Grok1 specific
-            ckpt_down_proj_name="linear_1",  # Grok1 specific
-            ckpt_up_proj_name="linear_v",  # Grok1 specific
+            ckpt_gate_proj_name="w1",  # Grok1 specific
+            ckpt_down_proj_name="w2",  # Grok1 specific
+            ckpt_up_proj_name="w3",  # Grok1 specific
             num_experts=num_experts)
 
     def load_weights(self, weights: Iterable[tuple[str,
