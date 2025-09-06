@@ -452,7 +452,7 @@ class Grok1DecoderLayer(nn.Module):
         with torch.cuda.stream(self.alt_stream):
             # moe should not be inplace because of stream race condition
             moe_result = self.moe_block(
-                x) if self.is_grok1 else self.block_sparse_moe(x)
+                x.detach().clone()) if self.is_grok1 else self.block_sparse_moe(x.detach().clone())
         current_stream.wait_stream(self.alt_stream)
         return (mlp_result + moe_result) / 1.4142135623730951
 
